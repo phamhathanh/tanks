@@ -8,8 +8,6 @@ function preload() {
     game.load.crossOrigin = 'anonymous';
 
     game.load.image('player', 'sprites/player.png');
-    game.load.image('bomb', 'sprites/bomb.png');
-    game.load.image('fire', 'sprites/fire.png');
 
     game.load.image('floor', 'sprites/tiles/floor.png');
     game.load.image('wall', 'sprites/tiles/wall.png');
@@ -39,7 +37,7 @@ function create() {
     map.addTilesetImage('floor', 'floor');
     map.addTilesetImage('wall', 'wall');
     map.addTilesetImage('block', 'block');
-    
+
     map.layers.forEach(function (layer, index) {
         map.createLayer(index);
     });
@@ -52,6 +50,8 @@ function create() {
     player = game.add.sprite(TILE_SIZE * 1.5, TILE_SIZE * 1.5, 'player');
     player.anchor.setTo(0.5, 0.5);
     player.bringToTop();
+
+    player.facing = Direction.DOWN;
 
     keys = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
@@ -89,25 +89,26 @@ var playerPosition = { x: 1, y: 1 };
 const SPEED = 0.12;
 
 function move(direction) {
-    face(direction);
+    if (player.facing !== direction) {
+        face(direction);
+        snapPlayer();
+    }
 
-    const currentTile = getTile(playerPosition);
     const destination = {
         x: playerPosition.x + (SPEED + 0.5) * direction.x,
         y: playerPosition.y + (SPEED + 0.5) * direction.y
     };
     const destinationTile = getTile(destination);
 
-    const horizontal = direction.y === 0;
-    const destinationOccupied = isOccupied(destinationTile);
-    const currentTileOccupied = isOccupied(currentTile);
-    const theFollowingTile = {
-        x: currentTile.x + direction.x,
-        y: currentTile.y + direction.y
-    };
-    const theFollowingTileOccupied = isOccupied(theFollowingTile);
-    if (destinationOccupied && (!currentTileOccupied || theFollowingTileOccupied)) {
-        if (horizontal) {
+    const movingHorizontally = direction.y === 0;
+    const destinationHalfTile = getHalfTile(destination, movingHorizontally);
+    const destinationOccupied = isHittingTheWall(destinationHalfTile, movingHorizontally);
+    if (destinationOccupied) {
+        
+    player.x = TILE_SIZE * (playerPosition.x + 0.5);
+    player.y = TILE_SIZE * (playerPosition.y + 0.5);
+        return;
+        if (movingHorizontally) {
             if (Math.abs(playerPosition.x - destination.x) > 1)
                 playerPosition.x = destinationTile.x - direction.x;
         }
@@ -117,19 +118,13 @@ function move(direction) {
         }
     }
     else {
-        if (horizontal)
-            playerPosition.y = snap(playerPosition.y, destinationTile.y);
-        else {
-            playerPosition.x = snap(playerPosition.x, destinationTile.x);
-        }
-
         playerPosition.x += SPEED * direction.x;
         playerPosition.y += SPEED * direction.y;
 
         const newPosition = getTile(playerPosition);
         if (powerupMap.hasTile(newPosition.x, newPosition.y)) {
             powerupMap.removeTile(newPosition.x, newPosition.y);
-            fireLength++;
+            // Do stuffs.
         }
     }
 
@@ -138,7 +133,16 @@ function move(direction) {
 }
 
 function face(direction) {
+    player.facing = direction;
     player.rotation = -Math.PI / 2 + Math.atan2(direction.y, direction.x);
+}
+
+function snapPlayer() {
+    const isHorizontal = player.facing.y === 0;
+    if (isHorizontal)
+        playerPosition.y = Math.round(playerPosition.y * 2) / 2;
+    else
+        playerPosition.x = Math.round(playerPosition.x * 2) / 2;
 }
 
 function getTile(position) {
@@ -148,11 +152,49 @@ function getTile(position) {
     };
 }
 
-function isOccupied(tile) {
-    if (tile.x < 0 || tile.x > MAP_WIDTH - 1
-        || tile.y < 0 || tile.y > MAP_HEIGHT - 1)
+function getHalfTile(position, movingHorizontally) {
+    if (movingHorizontally)
+        return {
+            x: Math.round(position.x),
+            y: Math.round(position.y * 2) / 2
+        };
+    else
+        return {
+            x: Math.round(position.x * 2) / 2,
+            y: Math.round(position.y)
+        };
+}
+
+function isHittingTheWall(halfTile, movingHorizontally) {
+    if (halfTile.x < 0 || halfTile.x > MAP_WIDTH - 1
+        || halfTile.y < 0 || halfTile.y > MAP_HEIGHT - 1)
         throw 'Argument out of range.';
 
+    if (movingHorizontally) {
+        if (!Number.isInteger(halfTile.x))
+            throw 'Not expected.'
+        if (Number.isInteger(halfTile.y))
+            return isOccupied(halfTile);
+        else {
+            const leftTile = { x: halfTile.x, y: halfTile.y - 0.5 };
+            const rightTile = { x: halfTile.x, y: halfTile.y + 0.5 };
+            return isOccupied(leftTile) || isOccupied(rightTile);
+        }
+    }
+    else {
+        if (!Number.isInteger(halfTile.y))
+            throw 'Not expected.'
+        if (Number.isInteger(halfTile.x))
+            return isOccupied(halfTile);
+        else {
+            const upperTile = { x: halfTile.x - 0.5, y: halfTile.y };
+            const lowerTile = { x: halfTile.x + 0.5, y: halfTile.y };
+            return isOccupied(upperTile) || isOccupied(lowerTile);
+        }
+    }
+}
+
+function isOccupied(tile) {
     return map.hasTile(tile.x, tile.y, 'wall')
         || map.hasTile(tile.x, tile.y, 'objects');
 }
