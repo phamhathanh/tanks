@@ -39,19 +39,10 @@ function create() {
     map.addTilesetImage('floor', 'floor');
     map.addTilesetImage('wall', 'wall');
     map.addTilesetImage('block', 'block');
-    map.addTilesetImage('bomb', 'bomb');
     
     map.layers.forEach(function (layer, index) {
         map.createLayer(index);
     });
-
-    map.forEach(function (block) {
-        block.burn = function () {
-            //TODO: drop power-up.
-            map.removeTile(block.x, block.y, 'objects');
-            powerupMap.putTile(PowerUp.LENGTH.index, block.x, block.y);
-        };
-    }, {}, 0, 0, MAP_WIDTH, MAP_HEIGHT, 'objects');
 
     powerupMap = game.add.tilemap();
     powerupMap.create('powerups', MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, TILE_SIZE);
@@ -68,7 +59,8 @@ function create() {
         'A': Phaser.KeyCode.Z
     });
 
-    keys.A.onDown.add(dropBomb);
+    //keys.A.onDown.add(dropBomb);
+    // TODO: FIRE!
 }
 
 var Direction = {
@@ -172,66 +164,11 @@ function snap(value, target) {
     return value - SPEED * Math.sign(diff);
 }
 
-var bombLeft = 2;
-var fireLength = 1;
-function dropBomb() {
-    if (bombLeft === 0)
-        return;
-
-    var currentTile = getTile(playerPosition);
-    if (map.hasTile(currentTile.x, currentTile.y, 'objects'))
-        return;
-
-    const bombTilesetIndex = 4;
-    var bombTile = map.putTile(bombTilesetIndex, currentTile.x, currentTile.y, 'objects');
-
-    bombLeft--;
-    bombTile.burn = function () {
-        map.removeTile(currentTile.x, currentTile.y, 'objects');
-        showFire(currentTile);
-        Object.values(Direction).forEach(function (direction) {
-            burn(currentTile, direction, fireLength);
-        });
-        bombLeft++;
-    }
-    bombTile.timer = startCoroutine(2500, function () {
-        bombTile.burn();
-    });
-}
-
-function burn(origin, direction, fireLength) {
-    const tile = getNextTile(origin, direction);
-    if (map.hasTile(tile.x, tile.y, 'wall'))
-        return;
-
-    const tileObj = map.getTile(tile.x, tile.y, 'objects');
-    if (tileObj !== null) {
-        if (tileObj.timer !== undefined)
-            tileObj.timer.destroy();
-        tileObj.burn();
-    }
-    else if (fireLength > 1)
-        burn(tile, direction, fireLength - 1);
-
-    showFire(tile);
-
-    var playerTile = getTile(playerPosition);
-    if (playerTile.x == tile.x && playerTile.y == tile.y)
-        console.log("GAME OVER");
-}
-
 function getNextTile(tile, direction) {
     return {
         x: tile.x + direction.x,
         y: tile.y + direction.y
     }
-}
-
-function showFire(tile) {
-    var fire = game.add.sprite(TILE_SIZE * tile.x, TILE_SIZE * tile.y, 'fire');
-    startCoroutine(500, function () {
-        fire.destroy();
-    });
 }
 
 function startCoroutine(delay, callback) {
