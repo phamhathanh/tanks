@@ -1,6 +1,6 @@
 "use strict";
 
-var game = new Phaser.Game(1088, 704, Phaser.AUTO, '',
+var game = new Phaser.Game(1088, 704, Phaser.CANVAS, '',
     { preload: preload, create: create, update: update, render: render });
 
 function preload() {
@@ -25,7 +25,6 @@ const MAP_HEIGHT = 11;
 var player;
 var map; var powerupMap;
 
-var directionKeys;
 var keys;
 
 var PowerUp = {
@@ -47,11 +46,11 @@ function create() {
     powerupMap.addTilesetImage('length', 'length');
     powerupMap.putTile(PowerUp.LENGTH.index, 5, 1);
 
-    player = game.add.sprite(TILE_SIZE * 1.5, TILE_SIZE * 1.5, 'player');
-    player.anchor.setTo(0.5, 0.5);
-    player.bringToTop();
+    const playerSprite = game.add.sprite(TILE_SIZE * 1.5, TILE_SIZE * 1.5, 'player');
+    playerSprite.anchor.setTo(0.5, 0.5);
+    playerSprite.bringToTop();
 
-    player.facing = Direction.DOWN;
+    player = new Player(1, 1, playerSprite);
 
     keys = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
@@ -81,22 +80,15 @@ function update() {
         move(Direction.DOWN);
 }
 
-function face(direction) {
-    player.rotation = -Math.PI / 2 + Math.atan2(direction.y, direction.x);
-}
-
-var playerPosition = { x: 1, y: 1 };
-const SPEED = 0.12;
-
 function move(direction) {
     if (player.facing !== direction) {
-        face(direction);
-        snapPlayer();
+        player.face(direction);
+        snap(player);
     }
 
     const destination = {
-        x: playerPosition.x + (SPEED + 0.5) * direction.x,
-        y: playerPosition.y + (SPEED + 0.5) * direction.y
+        x: player.position.x + (player.SPEED + 0.5) * direction.x,
+        y: player.position.y + (player.SPEED + 0.5) * direction.y
     };
     const destinationTile = getTile(destination);
 
@@ -104,45 +96,33 @@ function move(direction) {
     const destinationHalfTile = getHalfTile(destination, movingHorizontally);
     const destinationOccupied = isHittingTheWall(destinationHalfTile, movingHorizontally);
     if (destinationOccupied) {
-        
-    player.x = TILE_SIZE * (playerPosition.x + 0.5);
-    player.y = TILE_SIZE * (playerPosition.y + 0.5);
-        return;
-        if (movingHorizontally) {
-            if (Math.abs(playerPosition.x - destination.x) > 1)
-                playerPosition.x = destinationTile.x - direction.x;
-        }
-        else {
-            if (Math.abs(playerPosition.y - destination.y) > 1)
-                playerPosition.y = destinationTile.y - direction.y;
-        }
+        if (movingHorizontally)
+            if (Math.abs(player.position.x - destination.x) > 1)
+                player.position.x = destinationTile.x - direction.x;
+        else
+            if (Math.abs(player.position.y - destination.y) > 1)
+                player.position.y = destinationTile.y - direction.y;
     }
     else {
-        playerPosition.x += SPEED * direction.x;
-        playerPosition.y += SPEED * direction.y;
-
-        const newPosition = getTile(playerPosition);
+        player.position.x += player.SPEED * direction.x;
+        player.position.y += player.SPEED * direction.y;
+        const newPosition = getTile(player.position);
         if (powerupMap.hasTile(newPosition.x, newPosition.y)) {
             powerupMap.removeTile(newPosition.x, newPosition.y);
             // Do stuffs.
         }
     }
 
-    player.x = TILE_SIZE * (playerPosition.x + 0.5);
-    player.y = TILE_SIZE * (playerPosition.y + 0.5);
+    player.sprite.x = TILE_SIZE * (player.position.x + 0.5);
+    player.sprite.y = TILE_SIZE * (player.position.y + 0.5);
 }
 
-function face(direction) {
-    player.facing = direction;
-    player.rotation = -Math.PI / 2 + Math.atan2(direction.y, direction.x);
-}
-
-function snapPlayer() {
+function snap(player) {
     const isHorizontal = player.facing.y === 0;
     if (isHorizontal)
-        playerPosition.y = Math.round(playerPosition.y * 2) / 2;
+        player.position.y = Math.round(player.position.y * 2) / 2;
     else
-        playerPosition.x = Math.round(playerPosition.x * 2) / 2;
+        player.position.x = Math.round(player.position.x * 2) / 2;
 }
 
 function getTile(position) {
@@ -197,13 +177,6 @@ function isHittingTheWall(halfTile, movingHorizontally) {
 function isOccupied(tile) {
     return map.hasTile(tile.x, tile.y, 'wall')
         || map.hasTile(tile.x, tile.y, 'objects');
-}
-
-function snap(value, target) {
-    var diff = value - target;
-    if (Math.abs(diff) < SPEED)
-        return target;
-    return value - SPEED * Math.sign(diff);
 }
 
 function getNextTile(tile, direction) {
