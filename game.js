@@ -4,7 +4,7 @@ const TILE_SIZE = 32;
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 22;
 
-var game = new Phaser.Game(TILE_SIZE*MAP_WIDTH, TILE_SIZE*MAP_HEIGHT, Phaser.CANVAS, '',
+var game = new Phaser.Game(TILE_SIZE * MAP_WIDTH, TILE_SIZE * MAP_HEIGHT, Phaser.CANVAS, '',
     { preload: preload, create: create, update: update, render: render });
 
 function preload() {
@@ -12,24 +12,19 @@ function preload() {
     game.load.crossOrigin = 'anonymous';
 
     game.load.image('player', 'sprites/player.png');
+    game.load.image('bullet', 'sprites/bullet.png');
 
     game.load.image('floor', 'sprites/tiles/floor.png');
     game.load.image('wall', 'sprites/tiles/wall.png');
     game.load.image('block', 'sprites/tiles/block.png');
 
-    game.load.image('length', 'sprites/powerup/length.png');
-
     game.load.tilemap('map', 'sprites/tiles/map.json', null, Phaser.Tilemap.TILED_JSON);
 }
 
 var player;
-var map; var powerupMap;
-
+var map;
 var keys;
-
-var PowerUp = {
-    LENGTH: { index: 0 }
-};
+var updaters = [];
 
 function create() {
     map = game.add.tilemap('map');
@@ -40,11 +35,6 @@ function create() {
     map.layers.forEach(function (layer, index) {
         map.createLayer(index);
     });
-
-    powerupMap = game.add.tilemap();
-    powerupMap.create('powerups', MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, TILE_SIZE);
-    powerupMap.addTilesetImage('length', 'length');
-    powerupMap.putTile(PowerUp.LENGTH.index, 5, 1);
 
     const playerSprite = game.add.sprite(0, 0, 'player');
     playerSprite.anchor.setTo(0.5, 0.5);
@@ -57,11 +47,42 @@ function create() {
     keys = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
         'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT,
-        'A': Phaser.KeyCode.Z
+        'fire': Phaser.KeyCode.Z
     });
 
-    //keys.A.onDown.add(dropBomb);
-    // TODO: FIRE!
+    keys.fire.onDown.add(function () {
+        const SPEED = 10;
+        const bullet = game.add.sprite(playerSprite.x, playerSprite.y, 'bullet');
+        bullet.anchor.setTo(0.5, 0.5);
+        bullet.scale.setTo(0.64);
+        const direction = player.facing;
+        bullet.rotation = Math.PI / 2 + Math.atan2(direction.y, direction.x);
+        var updater;
+        updater = function () {
+            bullet.x += SPEED * direction.x;
+            bullet.y += SPEED * direction.y;
+
+            const position = {
+                x: bullet.x / (2 * TILE_SIZE) - 0.5,
+                y: bullet.y / (2 * TILE_SIZE) - 0.5
+            };
+            const halfTile = getHalfTile(position);
+            let hit = false;
+            getTilesAt(halfTile).forEach(function (tile) {
+                const tileObj = map.getTile(tile.col, tile.row, 'wall');
+                if (tileObj !== null) {
+                    hit = true;
+                    if (tileObj.index === 2)
+                        map.removeTile(tile.col, tile.row, 'wall');
+                }
+            });
+            if (hit) {
+                updaters.splice(updaters.indexOf(updater), 1);
+                bullet.destroy();
+            }
+        };
+        updaters.push(updater);
+    });
 }
 
 var Direction = {
@@ -72,6 +93,9 @@ var Direction = {
 };
 
 function update() {
+    for (let i = 0; i < updaters.length; i++)
+        updaters[i]();
+
     if (keys.left.isDown)
         move(Direction.LEFT);
     else if (keys.right.isDown)
@@ -93,19 +117,19 @@ function move(direction) {
         y: player.position.y + (player.SPEED + 0.25) * direction.y
     };
     const destinationHalfTile = getHalfTile(destination);
-    const movingHorizontally = direction.y === 0;
-    const destinationOccupied = isHittingTheWall(destinationHalfTile, movingHorizontally);
+    const destinationOccupied = isHittingTheWall(destinationHalfTile);
     if (destinationOccupied) {
         var isTouchingTheWall;
+        const movingHorizontally = direction.y === 0;
         if (movingHorizontally) {
             isTouchingTheWall = Math.abs(player.position.x - destinationHalfTile.x) <= 0.5
             if (!isTouchingTheWall)
-                player.position.x = destinationHalfTile.x - 0.5*direction.x;
+                player.position.x = destinationHalfTile.x - 0.5 * direction.x;
         }
         else {
             isTouchingTheWall = Math.abs(player.position.y - destinationHalfTile.y) <= 0.5
             if (!isTouchingTheWall)
-                player.position.y = destinationHalfTile.y - 0.5*direction.y;
+                player.position.y = destinationHalfTile.y - 0.5 * direction.y;
         }
     }
     else
@@ -132,20 +156,23 @@ function getHalfTile(position, movingHorizontally) {
     };
 }
 
-function isHittingTheWall(halfTile, movingHorizontally) {
-    const left = halfTile.x * 2,
-        right = halfTile.x * 2 + 1,
-        top = halfTile.y * 2,
-        bottom = halfTile.y * 2 + 1;
-
+function isHittingTheWall(halfTile) {
     function isOccupied(row, col) {
         if (col < 0 || col > MAP_WIDTH - 1
             || row < 0 || row > MAP_HEIGHT - 1)
             throw 'Argument out of range: ' + row + ' ' + col;
         return map.hasTile(col, row, 'wall');
     }
-    return isOccupied(top, left) || isOccupied(top, right)
-        || isOccupied(bottom, left) || isOccupied(bottom, right);
+    return getTilesAt(halfTile).some(tile => isOccupied(tile.row, tile.col));
+}
+
+function getTilesAt(halfTile) {
+    const left = halfTile.x * 2,
+        right = halfTile.x * 2 + 1,
+        top = halfTile.y * 2,
+        bottom = halfTile.y * 2 + 1;
+    return [{ row: top, col: left }, { row: top, col: right },
+    { row: bottom, col: left }, { row: bottom, col: right }];
 }
 
 function render() {
