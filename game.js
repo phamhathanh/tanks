@@ -21,10 +21,9 @@ function preload() {
     game.load.tilemap('map', 'sprites/tiles/map.json', null, Phaser.Tilemap.TILED_JSON);
 }
 
-var player;
 var map;
-var keys;
 var updaters = [];
+const players = [];
 
 function create() {
     map = game.add.tilemap('map');
@@ -36,53 +35,21 @@ function create() {
         map.createLayer(index);
     });
 
-    const playerSprite = game.add.sprite(0, 0, 'player');
-    playerSprite.anchor.setTo(0.5, 0.5);
-    playerSprite.scale.setTo(0.64);
-    playerSprite.bringToTop();
-
-    player = new Player(1, 1, playerSprite);
-    player.updatePosition();
-
-    keys = game.input.keyboard.addKeys({
+    const keys1 = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
         'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT,
-        'fire': Phaser.KeyCode.Z
+        'fire': Phaser.KeyCode.NUMPAD_0
     });
+    const player1 = new Player(1, 1, keys1);
 
-    keys.fire.onDown.add(function () {
-        const SPEED = 10;
-        const bullet = game.add.sprite(playerSprite.x, playerSprite.y, 'bullet');
-        bullet.anchor.setTo(0.5, 0.5);
-        bullet.scale.setTo(0.64);
-        const direction = player.facing;
-        bullet.rotation = Math.PI / 2 + Math.atan2(direction.y, direction.x);
-        var updater;
-        updater = function () {
-            bullet.x += SPEED * direction.x;
-            bullet.y += SPEED * direction.y;
-
-            const position = {
-                x: bullet.x / (2 * TILE_SIZE) - 0.5,
-                y: bullet.y / (2 * TILE_SIZE) - 0.5
-            };
-            const halfTile = getHalfTile(position);
-            let hit = false;
-            getTilesAt(halfTile).forEach(function (tile) {
-                const tileObj = map.getTile(tile.col, tile.row, 'wall');
-                if (tileObj !== null) {
-                    hit = true;
-                    if (tileObj.index === 2)
-                        map.removeTile(tile.col, tile.row, 'wall');
-                }
-            });
-            if (hit) {
-                updaters.splice(updaters.indexOf(updater), 1);
-                bullet.destroy();
-            }
-        };
-        updaters.push(updater);
+    const keys2 = game.input.keyboard.addKeys({
+        'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S,
+        'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D,
+        'fire': Phaser.KeyCode.J
     });
+    const player2 = new Player(7, 1, keys2);
+    players.push(player1);
+    players.push(player2);
 }
 
 var Direction = {
@@ -95,84 +62,6 @@ var Direction = {
 function update() {
     for (let i = 0; i < updaters.length; i++)
         updaters[i]();
-
-    if (keys.left.isDown)
-        move(Direction.LEFT);
-    else if (keys.right.isDown)
-        move(Direction.RIGHT);
-    else if (keys.up.isDown)
-        move(Direction.UP);
-    else if (keys.down.isDown)
-        move(Direction.DOWN);
-}
-
-function move(direction) {
-    if (player.facing !== direction) {
-        player.face(direction);
-        snap(player);
-    }
-
-    const destination = {
-        x: player.position.x + (player.SPEED + 0.25) * direction.x,
-        y: player.position.y + (player.SPEED + 0.25) * direction.y
-    };
-    const destinationHalfTile = getHalfTile(destination);
-    const destinationOccupied = isHittingTheWall(destinationHalfTile);
-    if (destinationOccupied) {
-        var isTouchingTheWall;
-        const movingHorizontally = direction.y === 0;
-        if (movingHorizontally) {
-            isTouchingTheWall = Math.abs(player.position.x - destinationHalfTile.x) <= 0.5
-            if (!isTouchingTheWall)
-                player.position.x = destinationHalfTile.x - 0.5 * direction.x;
-        }
-        else {
-            isTouchingTheWall = Math.abs(player.position.y - destinationHalfTile.y) <= 0.5
-            if (!isTouchingTheWall)
-                player.position.y = destinationHalfTile.y - 0.5 * direction.y;
-        }
-    }
-    else
-        player.position = {
-            x: player.position.x + player.SPEED * direction.x,
-            y: player.position.y + player.SPEED * direction.y
-        };
-
-    player.updatePosition();
-}
-
-function snap(player) {
-    const isHorizontal = player.facing.y === 0;
-    if (isHorizontal)
-        player.position.y = Math.round(player.position.y * 2) / 2;
-    else
-        player.position.x = Math.round(player.position.x * 2) / 2;
-}
-
-function getHalfTile(position, movingHorizontally) {
-    return {
-        x: Math.round(position.x * 2) / 2,
-        y: Math.round(position.y * 2) / 2
-    };
-}
-
-function isHittingTheWall(halfTile) {
-    function isOccupied(row, col) {
-        if (col < 0 || col > MAP_WIDTH - 1
-            || row < 0 || row > MAP_HEIGHT - 1)
-            throw 'Argument out of range: ' + row + ' ' + col;
-        return map.hasTile(col, row, 'wall');
-    }
-    return getTilesAt(halfTile).some(tile => isOccupied(tile.row, tile.col));
-}
-
-function getTilesAt(halfTile) {
-    const left = halfTile.x * 2,
-        right = halfTile.x * 2 + 1,
-        top = halfTile.y * 2,
-        bottom = halfTile.y * 2 + 1;
-    return [{ row: top, col: left }, { row: top, col: right },
-    { row: bottom, col: left }, { row: bottom, col: right }];
 }
 
 function render() {
