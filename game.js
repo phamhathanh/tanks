@@ -22,32 +22,25 @@ function preload() {
 }
 
 var map;
-var updaters = [];
+const updaters = [];
 const players = [];
 
 function create() {
-    map = game.add.tilemap('map');
-    map.addTilesetImage('floor', 'floor');
-    map.addTilesetImage('wall', 'wall');
-    map.addTilesetImage('block', 'block');
-
-    map.layers.forEach(function (layer, index) {
-        map.createLayer(index);
-    });
+    map = new Map();
 
     const keys1 = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.UP, 'down': Phaser.KeyCode.DOWN,
         'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT,
         'fire': Phaser.KeyCode.NUMPAD_0
     });
-    const player1 = new Player(1, 1, keys1);
+    const player1 = new Player(1, 3, keys1);
 
     const keys2 = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S,
         'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D,
         'fire': Phaser.KeyCode.J
     });
-    const player2 = new Player(7, 1, keys2);
+    const player2 = new Player(1, 2, keys2);
     players.push(player1);
     players.push(player2);
 }

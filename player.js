@@ -1,11 +1,13 @@
 "use strict";
 
 function Player(x, y, keys) {
-    var player = this;
+    const player = this;
 
-    this.SPEED = 0.09;
+    const SPEED = 0.09;
 
-    this.position = { x: x, y: y };
+    var facing = Direction.DOWN;
+    var position = { x: x, y: y };
+
     var sprite = game.add.sprite(0, 0, 'player');
     sprite.anchor.setTo(0.5, 0.5);
     sprite.scale.setTo(0.64);
@@ -13,16 +15,9 @@ function Player(x, y, keys) {
     sprite.tint = Math.random() * 0xffffff;
     updatePosition();
 
-    this.facing = Direction.DOWN;
-
-    function face(direction) {
-        player.facing = direction;
-        sprite.rotation = -Math.PI / 2 + Math.atan2(direction.y, direction.x);
-    };
-
     function updatePosition() {
-        sprite.x = 2 * TILE_SIZE * (player.position.x + 0.5);
-        sprite.y = 2 * TILE_SIZE * (player.position.y + 0.5);
+        sprite.x = 2 * TILE_SIZE * (position.x + 0.5);
+        sprite.y = 2 * TILE_SIZE * (position.y + 0.5);
     };
 
     keys.fire.onDown.add(function () {
@@ -30,7 +25,7 @@ function Player(x, y, keys) {
         const bullet = game.add.sprite(sprite.x, sprite.y, 'bullet');
         bullet.anchor.setTo(0.5, 0.5);
         bullet.scale.setTo(0.64);
-        const direction = player.facing;
+        const direction = facing;
         bullet.rotation = Math.PI / 2 + Math.atan2(direction.y, direction.x);
         var updater;
         updater = function () {
@@ -41,14 +36,13 @@ function Player(x, y, keys) {
                 x: bullet.x / (2 * TILE_SIZE) - 0.5,
                 y: bullet.y / (2 * TILE_SIZE) - 0.5
             };
-            const halfTile = getHalfTile(position);
             let hit = false;
-            getTilesAt(halfTile).forEach(function (tile) {
-                const tileObj = map.getTile(tile.col, tile.row, 'wall');
-                if (tileObj !== null) {
+            getOccupyingTiles(position).forEach(function (tile) {
+                const tileType = map.getTileType(tile.col, tile.row);
+                if (tileType !== Map.Tile.NONE) {
                     hit = true;
-                    if (tileObj.index === 2)
-                        map.removeTile(tile.col, tile.row, 'wall');
+                    if (tileType === Map.Tile.BRICK)
+                        map.removeTile(tile.col, tile.row);
                 }
             });
             if (hit) {
@@ -72,46 +66,49 @@ function Player(x, y, keys) {
     updaters.push(updater);
 
     function move(direction) {
-        if (player.facing !== direction) {
+        if (facing !== direction) {
             face(direction);
             snap();
         }
 
         const destination = {
-            x: player.position.x + (player.SPEED + 0.25) * direction.x,
-            y: player.position.y + (player.SPEED + 0.25) * direction.y
+            x: position.x + (SPEED + 0.25) * direction.x,
+            y: position.y + (SPEED + 0.25) * direction.y
         };
-        const destinationHalfTile = getHalfTile(destination);
-        const destinationOccupied =  getTilesAt(destinationHalfTile).some(tile => isOccupied(tile.row, tile.col));
+        const destinationOccupied = getOccupyingTiles(destination).some(tile => isOccupied(tile.row, tile.col));
         if (destinationOccupied) {
-            var isTouchingTheWall;
             const movingHorizontally = direction.y === 0;
+            const destinationHalfTile = getHalfTile(destination);
             if (movingHorizontally) {
-                isTouchingTheWall = Math.abs(player.position.x - destinationHalfTile.x) <= 0.5
-                if (!isTouchingTheWall)
-                    player.position.x = destinationHalfTile.x - 0.5 * direction.x;
+                const cannotAdvanceAnyFurther = Math.abs(position.x - destinationHalfTile.x) <= 0.5
+                if (!cannotAdvanceAnyFurther)
+                    position.x = destinationHalfTile.x - 0.5 * direction.x;
             }
             else {
-                isTouchingTheWall = Math.abs(player.position.y - destinationHalfTile.y) <= 0.5
-                if (!isTouchingTheWall)
-                    player.position.y = destinationHalfTile.y - 0.5 * direction.y;
+                const cannotAdvanceAnyFurther = Math.abs(position.y - destinationHalfTile.y) <= 0.5
+                if (!cannotAdvanceAnyFurther)
+                    position.y = destinationHalfTile.y - 0.5 * direction.y;
             }
         }
-        else
-            player.position = {
-                x: player.position.x + player.SPEED * direction.x,
-                y: player.position.y + player.SPEED * direction.y
-            };
+        else {
+            position.x += SPEED * direction.x;
+            position.y += SPEED * direction.y;
+        }
 
         updatePosition();
     }
 
+    function face(direction) {
+        facing = direction;
+        sprite.rotation = -Math.PI / 2 + Math.atan2(direction.y, direction.x);
+    };
+
     function snap() {
-        const isHorizontal = player.facing.y === 0;
+        const isHorizontal = facing.y === 0;
         if (isHorizontal)
-            player.position.y = Math.round(player.position.y * 2) / 2;
+            position.y = Math.round(position.y * 2) / 2;
         else
-            player.position.x = Math.round(player.position.x * 2) / 2;
+            position.x = Math.round(position.x * 2) / 2;
     }
 
     function getHalfTile(position, movingHorizontally) {
@@ -120,29 +117,18 @@ function Player(x, y, keys) {
             y: Math.round(position.y * 2) / 2
         };
     }
-    
+
     function isOccupied(row, col) {
-        if (col < 0 || col > MAP_WIDTH - 1
-            || row < 0 || row > MAP_HEIGHT - 1)
-            throw 'Argument out of range: ' + row + ' ' + col;
-        if (map.hasTile(col, row, 'wall'))
-            return true;
-        for (let i = 0; i < players.length; i++) {
-            const _player = players[i];
-            if (_player === player)
-                continue;
-            const occupied = _player.getOccupyingTiles().some(tile => (tile.row === row && tile.col === col));
-            if (occupied)
-                return true;
-        }
-        return false;
+        const occupier = map.getOccupier(col, row);
+        return occupier !== Map.Tile.NONE && occupier !== player;
     }
 
     this.getOccupyingTiles = function () {
-        return getTilesAt(getHalfTile(player.position));
+        return getOccupyingTiles(position);
     };
 
-    function getTilesAt(halfTile) {
+    function getOccupyingTiles(position) {
+        const halfTile = getHalfTile(position);
         const left = halfTile.x * 2,
             right = halfTile.x * 2 + 1,
             top = halfTile.y * 2,
