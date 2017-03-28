@@ -40,7 +40,7 @@ function create() {
         'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D,
         'fire': Phaser.KeyCode.J
     });
-    const player2 = new Player(1, 2, keys2);
+    const player2 = new Player(5, 1, keys2);
     players.push(player1);
     players.push(player2);
 }
