@@ -35,7 +35,7 @@ function Bullet(x, y, owner) {
             }
         });
         if (hit) {
-            updaters.splice(updaters.indexOf(update), 1);
+            updaters.remove(update);
             sprite.destroy();
         }
     }

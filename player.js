@@ -97,7 +97,7 @@ function Player(x, y, keys) {
 
     this.destroy = function () {
         sprite.destroy();
-        players.splice(players.indexOf(player), 1);
+        players.remove(player);
         isDead = true;
     };
 }

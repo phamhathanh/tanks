@@ -33,7 +33,7 @@ function create() {
         'left': Phaser.KeyCode.LEFT, 'right': Phaser.KeyCode.RIGHT,
         'fire': Phaser.KeyCode.NUMPAD_0
     });
-    const player1 = new Player(1, 3, keys1);
+    const player1 = new Player(1, 1, keys1);
 
     const keys2 = game.input.keyboard.addKeys({
         'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S,
