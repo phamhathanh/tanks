@@ -42,6 +42,7 @@ function Player(x, y, keys) {
             move(Direction.UP);
         else if (keys.down.isDown)
             move(Direction.DOWN);
+        updatePosition();
     }
     updaters.push(update);
 
@@ -56,27 +57,20 @@ function Player(x, y, keys) {
             y: position.y + (SPEED + 0.25) * direction.y
         };
         const destinationOccupied = getOccupyingTiles(destination).some(tile => isOccupied(tile.row, tile.col));
-        if (destinationOccupied) {
-            const movingHorizontally = direction.y === 0;
-            if (movingHorizontally) {
-                const destinationTileX = Math.round(position.x * 2) / 2;
-                const cannotAdvanceAnyFurther = Math.abs(position.x - destinationTileX) <= 0.5
-                if (!cannotAdvanceAnyFurther)
-                    position.x = destinationTileX - 0.5 * direction.x;
-            }
-            else {
-                const destinationTileY = Math.round(position.y * 2) / 2;
-                const cannotAdvanceAnyFurther = Math.abs(position.y - destinationTileY) <= 0.5
-                if (!cannotAdvanceAnyFurther)
-                    position.y = destinationTileY - 0.5 * direction.y;
-            }
-        }
-        else {
+        if (!destinationOccupied) {
             position.x += SPEED * direction.x;
             position.y += SPEED * direction.y;
+            return;
         }
-
-        updatePosition();
+        
+        const destinationTile = {
+            x: Math.round(position.x * 2) / 2,
+            y: Math.round(position.y * 2) / 2
+        };
+        const dimension = direction.y === 0 ? 'x' : 'y';
+        const cannotAdvanceAnyFurther = Math.abs(position[dimension] - destinationTile[dimension]) <= 0.5
+        if (!cannotAdvanceAnyFurther)
+            position[dimension] = destinationTile[dimension] - 0.5 * direction[x];
     }
 
     function face(direction) {
