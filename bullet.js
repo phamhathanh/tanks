@@ -34,10 +34,20 @@ function Bullet(x, y, owner) {
                 }
             }
         });
-        if (hit) {
-            updaters.remove(update);
-            sprite.destroy();
-        }
+        if (hit)
+            destroy();
     }
     updaters.push(update);
+
+    var onDestroyCallback = null;
+    this.onDestroy = function (callback) {
+        onDestroyCallback = callback;
+    }
+
+    function destroy() {
+        updaters.remove(update);
+        sprite.destroy();
+        if (onDestroyCallback !== null)
+            onDestroyCallback();
+    }
 }
