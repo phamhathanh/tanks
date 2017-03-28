@@ -27,9 +27,10 @@ function Bullet(x, y, owner) {
                 hit = true;
                 if (occupier === Map.Tile.BRICK)
                     map.removeTile(tile.col, tile.row);
+                    // Implement tile.destroy();
 
                 if (players.includes(occupier)) {
-                    // TODO: Death.
+                    occupier.destroy();
                 }
             }
         });

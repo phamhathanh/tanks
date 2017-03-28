@@ -7,6 +7,7 @@ function Player(x, y, keys) {
 
     this.facing = Direction.DOWN;
     var position = { x: x, y: y };
+    var isDead = false;
 
     var sprite = game.add.sprite(0, 0, 'player');
     sprite.anchor.setTo(0.5, 0.5);
@@ -21,10 +22,12 @@ function Player(x, y, keys) {
     };
 
     keys.fire.onDown.add(function () {
+        if (isDead) return;
         new Bullet(sprite.x, sprite.y, player);
     });
 
     function update() {
+        if (isDead) return;
         if (keys.left.isDown)
             move(Direction.LEFT);
         else if (keys.right.isDown)
@@ -90,6 +93,12 @@ function Player(x, y, keys) {
 
     this.getOccupyingTiles = function () {
         return getOccupyingTiles(position);
+    };
+
+    this.destroy = function () {
+        sprite.destroy();
+        players.splice(players.indexOf(player), 1);
+        isDead = true;
     };
 }
 
