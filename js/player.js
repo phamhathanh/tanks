@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 function Player(x, y, keys) {
     const player = this;
@@ -56,7 +56,8 @@ function Player(x, y, keys) {
             x: position.x + (SPEED + 0.25) * direction.x,
             y: position.y + (SPEED + 0.25) * direction.y
         };
-        const destinationOccupied = getOccupyingTiles(destination).some(tile => isOccupied(tile.row, tile.col));
+        const destinationOccupied = getOccupyingTiles(destination)
+                                        .some(tile => isOccupied(tile.row, tile.col));
         if (!destinationOccupied) {
             position.x += SPEED * direction.x;
             position.y += SPEED * direction.y;
@@ -79,11 +80,8 @@ function Player(x, y, keys) {
     };
 
     function snap() {
-        const isHorizontal = player.facing.y === 0;
-        if (isHorizontal)
-            position.y = Math.round(position.y * 2) / 2;
-        else
-            position.x = Math.round(position.x * 2) / 2;
+        const dimension = player.facing.y === 0 ? 'y' : 'x';
+        position[dimension] = Math.round(position[dimension] * 2) / 2;
     }
 
     function isOccupied(row, col) {

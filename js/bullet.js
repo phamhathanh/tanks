@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 function Bullet(x, y, owner) {
     const bullet = this;
@@ -29,9 +29,8 @@ function Bullet(x, y, owner) {
                     map.removeTile(tile.col, tile.row);
                     // Implement tile.destroy();
 
-                if (players.includes(occupier)) {
+                if (players.includes(occupier))
                     occupier.destroy();
-                }
             }
         });
         if (hit)
@@ -42,7 +41,7 @@ function Bullet(x, y, owner) {
     var onDestroyCallback = null;
     this.onDestroy = function (callback) {
         onDestroyCallback = callback;
-    }
+    };
 
     function destroy() {
         updaters.remove(update);

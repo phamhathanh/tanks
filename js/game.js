@@ -1,14 +1,14 @@
-"use strict";
+'use strict';
 
 const TILE_SIZE = 32;
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 22;
 
-var game = new Phaser.Game(TILE_SIZE * MAP_WIDTH, TILE_SIZE * MAP_HEIGHT, Phaser.CANVAS, '',
-    { preload: preload, create: create, update: update, render: render });
+const state = { preload, create, update, render };
+const game = new Phaser.Game(TILE_SIZE * MAP_WIDTH, TILE_SIZE * MAP_HEIGHT, Phaser.CANVAS, '', state);
 
 function preload() {
-    game.load.baseURL = './';
+    game.load.baseURL = '../';
     game.load.crossOrigin = 'anonymous';
 
     game.load.image('player', 'sprites/player.png');
@@ -21,10 +21,8 @@ function preload() {
     game.load.tilemap('map', 'sprites/tiles/map.json', null, Phaser.Tilemap.TILED_JSON);
 }
 
-var map;
-const updaters = [];
+let map;
 const players = [];
-
 function create() {
     map = new Map();
 
@@ -45,13 +43,7 @@ function create() {
     players.push(player2);
 }
 
-var Direction = {
-    UP: { x: 0, y: -1 },
-    DOWN: { x: 0, y: 1 },
-    LEFT: { x: -1, y: 0 },
-    RIGHT: { x: 1, y: 0 }
-};
-
+const updaters = [];
 function update() {
     for (let i = 0; i < updaters.length; i++)
         updaters[i]();
