@@ -86,7 +86,7 @@ function Player(x, y, keys) {
 
     function isOccupied(row, col) {
         const occupier = map.getOccupier(col, row);
-        return occupier !== Map.Tile.NONE && occupier !== player;
+        return occupier !== null && occupier !== player;
     }
 
     this.getOccupyingTiles = function () {

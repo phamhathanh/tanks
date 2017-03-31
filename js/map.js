@@ -12,19 +12,12 @@ function Map() {
         tileMap.createLayer(index);
     });
 
-
     Map.Tile = {
-        NONE: { id: null },
         CONCRETE: { id: 1 },
         BRICK: { id: 2 }
     };
-
-    this.getTileType = function (column, row) {
-        const tile = tileMap.getTile(column, row, 'wall');
-        if (tile === null)
-            return Map.Tile.NONE;
-        return Object.values(Map.Tile).find(tileType => tileType.id === tile.index);
-    };
+    
+    // TODO: Abstractize field objects and players.
 
     this.removeTile = function (column, row) {
         tileMap.removeTile(column, row, 'wall');
@@ -42,6 +35,13 @@ function Map() {
         if (occupier !== undefined)
             return occupier;
 
-        return map.getTileType(column, row);
+        return getTileType(column, row);
+    };
+
+    function getTileType(column, row) {
+        const tile = tileMap.getTile(column, row, 'wall');
+        if (tile === null)
+            return null;
+        return Object.values(Map.Tile).find(tileType => tileType.id === tile.index);
     };
 }

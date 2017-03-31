@@ -20,25 +20,26 @@ function Bullet(x, y, owner) {
             x: sprite.x / (2 * TILE_SIZE) - 0.5,
             y: sprite.y / (2 * TILE_SIZE) - 0.5
         };
+        const occupyingTiles = getOccupyingTiles(position);
         let hit = false;
-        getOccupyingTiles(position).forEach(tile => {
+        for (let i = 0; i < occupyingTiles.length; i++) {
+            const tile = occupyingTiles[i];
             const occupier = map.getOccupier(tile.col, tile.row);
-            if (occupier !== Map.Tile.NONE && occupier !== owner) {
-                hit = true;
-                if (occupier === Map.Tile.BRICK)
-                    map.removeTile(tile.col, tile.row);
-                    // Implement tile.destroy();
-
-                if (players.includes(occupier))
-                    occupier.destroy();
-            }
-        });
+            if (occupier === null || occupier === owner)
+                continue;
+            hit = true;
+            if (occupier === Map.Tile.BRICK)
+                map.removeTile(tile.col, tile.row);
+                // Implement tile.destroy();
+            if (players.includes(occupier))
+                occupier.destroy();
+        }
         if (hit)
             destroy();
     }
     updaters.push(update);
 
-    var onDestroyCallback = null;
+    let onDestroyCallback = null;
     this.onDestroy = function (callback) {
         onDestroyCallback = callback;
     };
