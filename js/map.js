@@ -29,7 +29,7 @@ function Map() {
             throw 'Argument out of range: ' + column + ' ' + row;
 
         const occupier = players.find(player =>
-            player.getOccupyingTiles().some(tile =>
+            !player.isDead && player.getOccupyingTiles().some(tile =>
                 tile.row === row && tile.column === column)
         );
         if (occupier !== undefined)

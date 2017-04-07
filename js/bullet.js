@@ -31,8 +31,10 @@ function Bullet(x, y, owner) {
             if (occupier === Map.Tile.BRICK)
                 map.removeTile(tile.column, tile.row);
                 // Implement tile.destroy();
-            if (players.includes(occupier))
+            if (players.includes(occupier)) {
                 occupier.destroy();
+                owner.score++;
+            }
         }
         if (hit)
             destroy();

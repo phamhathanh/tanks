@@ -22,6 +22,7 @@ function preload() {
 }
 
 let map;
+let text;
 const players = [];
 function create() {
     map = new Map();
@@ -41,6 +42,10 @@ function create() {
     const player2 = new Player(5, 1, keys2);
     players.push(player1);
     players.push(player2);
+
+    
+    const style = { font: "bold 20px Arial", fill: "#fff" };
+    text = game.add.text(10, 10, '', style);
 }
 
 const updaters = [];
@@ -50,4 +55,7 @@ function update() {
 }
 
 function render() {
+    text.text = 'Player1: '+players[0].score+'\n'+'Player2: '+players[1].score;
 }
+
+// TODO: Wall builder.

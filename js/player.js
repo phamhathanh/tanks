@@ -7,8 +7,10 @@ function Player(x, y, keys) {
 
     this.facing = Direction.DOWN;
     let position = { x: x, y: y };
-    let isDead = false;
     let canFire = true;
+
+    this.isDead = false;
+    this.score = 0;
 
     const sprite = game.add.sprite(0, 0, 'player');
     sprite.anchor.setTo(0.5, 0.5);
@@ -23,7 +25,7 @@ function Player(x, y, keys) {
     };
 
     keys.fire.onDown.add(function () {
-        if (isDead) return;
+        if (player.isDead) return;
         if (!canFire) return;
         canFire = false;
         const bullet = new Bullet(sprite.x, sprite.y, player);
@@ -33,7 +35,7 @@ function Player(x, y, keys) {
     });
 
     function update() {
-        if (isDead) return;
+        if (player.isDead) return;
         if (keys.left.isDown)
             move(Direction.LEFT);
         else if (keys.right.isDown)
@@ -95,8 +97,7 @@ function Player(x, y, keys) {
 
     this.destroy = function () {
         sprite.alpha = 0;
-        players.remove(player);
-        isDead = true;
+        player.isDead = true;
         setTimeout(respawn, 3000);
     };
 
@@ -115,8 +116,7 @@ function Player(x, y, keys) {
         }
 
         sprite.alpha = 1;
-        isDead = false;
-        players.push(player);
+        player.isDead = false;
     }
 }
 
