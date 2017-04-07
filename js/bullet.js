@@ -24,12 +24,12 @@ function Bullet(x, y, owner) {
         let hit = false;
         for (let i = 0; i < occupyingTiles.length; i++) {
             const tile = occupyingTiles[i];
-            const occupier = map.getOccupier(tile.col, tile.row);
+            const occupier = map.getOccupier(tile.column, tile.row);
             if (occupier === null || occupier === owner)
                 continue;
             hit = true;
             if (occupier === Map.Tile.BRICK)
-                map.removeTile(tile.col, tile.row);
+                map.removeTile(tile.column, tile.row);
                 // Implement tile.destroy();
             if (players.includes(occupier))
                 occupier.destroy();

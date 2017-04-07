@@ -30,7 +30,7 @@ function Map() {
 
         const occupier = players.find(player =>
             player.getOccupyingTiles().some(tile =>
-                tile.row === row && tile.col === column)
+                tile.row === row && tile.column === column)
         );
         if (occupier !== undefined)
             return occupier;
@@ -43,5 +43,5 @@ function Map() {
         if (tile === null)
             return null;
         return Object.values(Map.Tile).find(tileType => tileType.id === tile.index);
-    };
+    }
 }

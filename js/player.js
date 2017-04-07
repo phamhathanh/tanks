@@ -57,7 +57,7 @@ function Player(x, y, keys) {
             y: position.y + (SPEED + 0.25) * direction.y
         };
         const destinationOccupied = getOccupyingTiles(destination)
-                                        .some(tile => isOccupied(tile.row, tile.col));
+                                        .some(tile => isOccupied(tile.row, tile.column));
         if (!destinationOccupied) {
             position.x += SPEED * direction.x;
             position.y += SPEED * direction.y;
@@ -77,15 +77,15 @@ function Player(x, y, keys) {
     function face(direction) {
         player.facing = direction;
         sprite.rotation = -Math.PI / 2 + Math.atan2(direction.y, direction.x);
-    };
+    }
 
     function snap() {
         const dimension = player.facing.y === 0 ? 'y' : 'x';
         position[dimension] = Math.round(position[dimension] * 2) / 2;
     }
 
-    function isOccupied(row, col) {
-        const occupier = map.getOccupier(col, row);
+    function isOccupied(row, column) {
+        const occupier = map.getOccupier(column, row);
         return occupier !== null && occupier !== player;
     }
 
@@ -107,6 +107,6 @@ function getOccupyingTiles(position) {
         right = tileX * 2 + 1,
         top = tileY * 2,
         bottom = tileY * 2 + 1;
-    return [{ row: top, col: left }, { row: top, col: right },
-    { row: bottom, col: left }, { row: bottom, col: right }];
+    return [{ row: top, column: left }, { row: top, column: right },
+    { row: bottom, column: left }, { row: bottom, column: right }];
 }
