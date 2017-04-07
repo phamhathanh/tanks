@@ -94,10 +94,30 @@ function Player(x, y, keys) {
     };
 
     this.destroy = function () {
-        sprite.destroy();
+        sprite.alpha = 0;
         players.remove(player);
         isDead = true;
+        setTimeout(respawn, 3000);
     };
+
+    function respawn() {
+        while (true) {
+            const randomPosition = {
+                x: getRandomInt(1, MAP_WIDTH/2 - 1),
+                y: getRandomInt(1, MAP_HEIGHT/2 - 1)
+            };
+            const occupied = getOccupyingTiles(randomPosition)
+                    .some(tile => map.getOccupier(tile.column, tile.row) !== null);
+            if (!occupied) {
+                position = randomPosition;
+                break;
+            }
+        }
+
+        sprite.alpha = 1;
+        isDead = false;
+        players.push(player);
+    }
 }
 
 function getOccupyingTiles(position) {
